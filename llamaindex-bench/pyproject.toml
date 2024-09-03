@@ -6,7 +6,14 @@ authors = ["Timon Vonk <timonv@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12,<3.13"
+argparse = "^1.4.0"
+uvloop = "^0.20.0"
+llama-index = "^0.11.4"
+llama-index-embeddings-fastembed = "^0.2.0"
+fastembed = "^0.3.6"
+llama-index-vector-stores-qdrant = "^0.3.0"
+llama-index-readers-huggingface-fs = "^0.2.0"
 
 
 [build-system]
