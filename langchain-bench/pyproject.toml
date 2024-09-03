@@ -6,7 +6,12 @@ authors = ["Timon Vonk <timonv@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12,<3.13"
+langchain = "^0.2.16"
+langchain-community = "^0.2.16"
+fastembed = "^0.3.6"
+langchain-qdrant = "^0.1.3"
+argparse = "^1.4.0"
 
 [tool.poetry.scripts]
 cli = "langchain_bench.cli:main"
