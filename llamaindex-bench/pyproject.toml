@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "llamaindex"
+name = "llamaindex-bench"
 version = "0.1.0"
 description = ""
 authors = ["Timon Vonk <timonv@gmail.com>"]

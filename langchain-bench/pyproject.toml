@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "langchain"
+name = "langchain-bench"
 version = "0.1.0"
 description = ""
 authors = ["Timon Vonk <timonv@gmail.com>"]
@@ -7,6 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
+
+[tool.poetry.scripts]
+cli = "langchain_bench.cli:main"
 
 
 [build-system]
