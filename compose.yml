@@ -1,0 +1,11 @@
+version: "3.7"
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.10.1
+    ports:
+      - "6333:6333"
+      - "6334:6334" # grpc
+    volumes:
+      - qdrant-data:/qdrant/storage
+volumes:
+  qdrant-data:
