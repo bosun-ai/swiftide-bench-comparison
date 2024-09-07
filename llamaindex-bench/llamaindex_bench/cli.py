@@ -13,6 +13,8 @@ from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core import Settings
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.readers.huggingface_fs import HuggingFaceFSReader
+from datasets import load_dataset
+
 
 parser = ArgumentParser(
     prog="Langchain Benchmark",

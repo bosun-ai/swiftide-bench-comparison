@@ -1,8 +1,11 @@
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-from langchain_community.document_loaders import HuggingFaceDatasetLoader
-from langchain_qdrant import QdrantVectorStore
-from qdrant_client import QdrantClient
+from langchain_qdrant import Qdrant
+from qdrant_client import AsyncQdrantClient, QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
+from langchain_community.document_loaders import DirectoryLoader
+from langchain_community.document_loaders import UnstructuredMarkdownLoader
+from langchain.text_splitter import MarkdownHeaderTextSplitter
+from langchain_community.document_loaders import TextLoader
 
 from multiprocessing import cpu_count
 
@@ -13,7 +16,6 @@ parser = ArgumentParser(
     prog="Langchain Benchmark",
 )
 parser.add_argument("-d", "--dataset", required=True, help="Hugging face dataset name")
-parser.add_argument("-c", "--column-name", required=True, help="Dataset column to load")
 parser.add_argument(
     "-q", "--qdrant-collection-name", required=True, help="Qdrant collection name"
 )
@@ -22,10 +24,10 @@ parser.add_argument(
 def main():
     args = parser.parse_args()
     print("Starting benchmark...")
-    uvloop.run(run(args.dataset_name, args.column_name, args.collection_name))
+    uvloop.run(run(args.dataset, args.qdrant_collection_name))
 
 
-async def run(dataset_name: str, column_name: str, collection_name: str):
+async def run(dataset_name: str, collection_name: str):
     # FastEmbedEmbeddings
     # usage: embeddings.embed_documents(list[])
     # Wtf is with the args?
@@ -38,27 +40,55 @@ async def run(dataset_name: str, column_name: str, collection_name: str):
 
     # Dataset loader
     print("Setting up loader ...")
-    loader = HuggingFaceDatasetLoader(dataset_name, column_name)
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+        ("####", "Header 4"),
+    ]
+    text_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+    loader = DirectoryLoader(
+        f"../data/{dataset_name}/",
+        glob="**/*.md",
+        show_progress=True,
+        loader_cls=UnstructuredMarkdownLoader,
+    )
+
     # probably: loader.alazy_load()
+    #
+    documents = sum(
+        map(
+            text_splitter.split_text,
+            map(lambda d: d.page_content, loader.lazy_load()),
+        ),
+        [],
+    )
+
+    print(f"Embedding {len(documents)} chunks ...")
 
     # Qdrant
     # Can this even be async?
     print("Initializing qdrant client ...")
     client = QdrantClient()
+    aclient = AsyncQdrantClient()
 
     print("Creating qdrant collection ...")
-    client.create_collection(
+    await aclient.recreate_collection(
         collection_name=collection_name,
         vectors_config=VectorParams(size=384, distance=Distance.COSINE),
     )
 
     print("Creating langchain vector store ...")
-    vector_store = QdrantVectorStore(
-        client=client, collection_name=collection_name, embedding=embeddings
+    vector_store = Qdrant(
+        client=client,
+        async_client=aclient,
+        collection_name=collection_name,
+        embeddings=embeddings,
     )
 
     print("Async adding documents to vector store ...")
-    await vector_store.aadd_texts(map(str, loader.lazy_load()))
+    await vector_store.aadd_documents(documents)
 
     print("Getting qdrant collection statistics ...")
     collection = client.get_collection(collection_name)

@@ -12,6 +12,8 @@ langchain-community = "^0.2.16"
 fastembed = "^0.3.6"
 langchain-qdrant = "^0.1.3"
 argparse = "^1.4.0"
+unstructured = {extras = ["markdown"], version = "^0.15.9"}
+markdown = "^3.7"
 
 [tool.poetry.scripts]
 cli = "langchain_bench.cli:main"
