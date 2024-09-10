@@ -1,8 +1,13 @@
+from typing import Required
+from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_qdrant import Qdrant
 from qdrant_client import AsyncQdrantClient, QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
-from langchain_community.document_loaders import DirectoryLoader
+from langchain_community.document_loaders import (
+    DirectoryLoader,
+    HuggingFaceDatasetLoader,
+)
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain.text_splitter import MarkdownHeaderTextSplitter
 from langchain_community.document_loaders import TextLoader
@@ -15,7 +20,14 @@ import uvloop
 parser = ArgumentParser(
     prog="Langchain Benchmark",
 )
-parser.add_argument("-d", "--dataset", required=True, help="Hugging face dataset name")
+
+# HuggingFaceDatasetLoader
+parser.add_argument("--dataset", help="Hugging face dataset name")
+parser.add_argument("--column-name", help="Column to use as input data")
+
+# DirectoryLoader
+parser.add_argument("--dir", help="Dataset from directory")
+
 parser.add_argument(
     "-q", "--qdrant-collection-name", required=True, help="Qdrant collection name"
 )
@@ -24,10 +36,25 @@ parser.add_argument(
 def main():
     args = parser.parse_args()
     print("Starting benchmark...")
-    uvloop.run(run(args.dataset, args.qdrant_collection_name))
+    loader = get_loader(args.dataset, args.column_name, args.dir)
+    uvloop.run(run(loader, args.collection_name))
 
 
-async def run(dataset_name: str, collection_name: str):
+def get_loader(dataset: str, column_name: str, dir: str):
+    if dataset and column_name:
+        return HuggingFaceDatasetLoader(dataset, column_name)
+    elif dir:
+        return DirectoryLoader(
+            f"../data/{dir}/",
+            glob="**/*.md",
+            show_progress=True,
+            loader_cls=UnstructuredMarkdownLoader,
+        )
+    else:
+        raise Exception("Could not build loader from args")
+
+
+async def run(loader: BaseLoader, collection_name: str):
     # FastEmbedEmbeddings
     # usage: embeddings.embed_documents(list[])
     # Wtf is with the args?
@@ -48,12 +75,6 @@ async def run(dataset_name: str, collection_name: str):
         ("####", "Header 4"),
     ]
     text_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
-    loader = DirectoryLoader(
-        f"../data/{dataset_name}/",
-        glob="**/*.md",
-        show_progress=True,
-        loader_cls=UnstructuredMarkdownLoader,
-    )
 
     # probably: loader.alazy_load()
     #

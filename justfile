@@ -6,7 +6,7 @@ download-rust-book:
 
 benchmark-rust-book: download-rust-book
   hyperfine -w 1 \
-  -n langchain "cd langchain-bench && poetry run cli -d rust-book -q lanchain-rust-book" \
+  -n langchain "cd langchain-bench && poetry run cli --dir rust-book -q lanchain-rust-book" \
   -n swiftide "cd swiftide-bench && cargo run --release -- -d rust-book -c swiftide-rust-book"
 
   
