@@ -5,7 +5,11 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.17", features = ["derive"] }
-swiftide = { version = "0.10.0", features = ["qdrant", "fastembed"] }
+swiftide = { version = "0.11.1", features = [
+  "qdrant",
+  "fastembed",
+  "parquet",
+], path = "../../swiftide/swiftide" }
 tokio = { version = "1.40.0", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"

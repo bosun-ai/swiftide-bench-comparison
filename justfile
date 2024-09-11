@@ -1,3 +1,8 @@
+download-wikitest := `huggingface-cli download --repo-type dataset Salesforce/wikitext  wikitext-103-v1/train-00000-of-00002.parquet`
+
+benchmark-wikitest:
+  echo {{ download-wikitest }}
+
 download-rust-book:
   mkdir -p data/rust-book && \
   cd data/rust-book && \

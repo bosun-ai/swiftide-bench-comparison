@@ -1,20 +1,32 @@
-use clap::Parser;
+use std::path::PathBuf;
+
+use clap::{Parser, Subcommand, ValueEnum};
 use swiftide::{
     indexing::{
         loaders::FileLoader,
         transformers::{ChunkMarkdown, Embed},
         EmbeddedField, Pipeline,
     },
-    integrations::{fastembed::FastEmbed, qdrant::Qdrant},
+    integrations::{fastembed::FastEmbed, parquet::Parquet, qdrant::Qdrant},
+    traits::Loader,
 };
 
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
     #[arg(short, long)]
-    dataset: String,
-    #[arg(short, long)]
     collection_name: String,
+
+    #[command(subcommand)]
+    loader: LoaderArgs,
+}
+
+#[derive(Subcommand)]
+enum LoaderArgs {
+    /// Load from raw file
+    Filename { filename: String },
+    /// Load from parquet file and columns
+    Parquet { path: PathBuf, column: String },
 }
 
 #[tokio::main]
@@ -32,13 +44,28 @@ async fn main() {
     let client = qdrant.client();
     let _ = client.delete_collection(args.collection_name);
 
-    Pipeline::from_loader(
-        FileLoader::new(format!("../data/{}", args.dataset)).with_extensions(&["md"]),
-    )
-    // .then_chunk(ChunkMarkdown::from_chunk_range(10..2024))
-    .then_in_batch(256, Embed::new(FastEmbed::try_default().unwrap()))
-    .then_store_with(qdrant)
-    .run()
-    .await
-    .unwrap();
+    let loader = build_loader(&args.loader);
+
+    Pipeline::from_loader(loader)
+        // .then_chunk(ChunkMarkdown::from_chunk_range(10..2024))
+        .then_in_batch(256, Embed::new(FastEmbed::try_default().unwrap()))
+        .then_store_with(qdrant)
+        .run()
+        .await
+        .unwrap();
+}
+
+fn build_loader(args: &LoaderArgs) -> Box<dyn Loader> {
+    match args {
+        LoaderArgs::Filename { filename } => {
+            Box::new(FileLoader::new(format!("../data/{}", filename)).with_extensions(&["md"]))
+        }
+        LoaderArgs::Parquet { path, column } => Box::new(
+            Parquet::builder()
+                .path(path)
+                .column_name(column)
+                .build()
+                .unwrap(),
+        ),
+    }
 }
