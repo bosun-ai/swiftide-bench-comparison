@@ -34,10 +34,12 @@ async fn main() {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
 
+    let batch_size = 256;
     let qdrant = Qdrant::builder()
         .collection_name(&args.collection_name)
         .vector_size(384)
         .with_vector(EmbeddedField::Combined)
+        .batch_size(24)
         .build()
         .unwrap();
 
@@ -48,7 +50,15 @@ async fn main() {
 
     Pipeline::from_loader(loader)
         // .then_chunk(ChunkMarkdown::from_chunk_range(10..2024))
-        .then_in_batch(256, Embed::new(FastEmbed::try_default().unwrap()))
+        .then_in_batch(
+            batch_size,
+            Embed::new(
+                FastEmbed::try_default()
+                    .unwrap()
+                    .with_batch_size(batch_size)
+                    .to_owned(),
+            ),
+        )
         .then_store_with(qdrant)
         .run()
         .await

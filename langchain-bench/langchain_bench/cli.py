@@ -1,6 +1,7 @@
 from typing import Required
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+from langchain_core.utils.iter import batch_iterate
 from langchain_qdrant import Qdrant
 from qdrant_client import AsyncQdrantClient, QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
@@ -23,6 +24,7 @@ parser = ArgumentParser(
 
 # HuggingFaceDatasetLoader
 parser.add_argument("--dataset", help="Hugging face dataset name")
+parser.add_argument("--dataset-file", help="Filename to use as input data")
 parser.add_argument("--column-name", help="Column to use as input data")
 
 # DirectoryLoader
@@ -36,13 +38,17 @@ parser.add_argument(
 def main():
     args = parser.parse_args()
     print("Starting benchmark...")
-    loader = get_loader(args.dataset, args.column_name, args.dir)
-    uvloop.run(run(loader, args.collection_name))
+    loader = get_loader(args.dataset, args.dataset_file, args.column_name, args.dir)
+    uvloop.run(run(loader, args.qdrant_collection_name))
 
 
-def get_loader(dataset: str, column_name: str, dir: str):
+def get_loader(dataset: str, dataset_file: str, column_name: str, dir: str):
     if dataset and column_name:
-        return HuggingFaceDatasetLoader(dataset, column_name)
+        return HuggingFaceDatasetLoader(
+            dataset,
+            page_content_column=column_name,
+            name="default",
+        )
     elif dir:
         return DirectoryLoader(
             f"../data/{dir}/",
@@ -67,27 +73,13 @@ async def run(loader: BaseLoader, collection_name: str):
 
     # Dataset loader
     print("Setting up loader ...")
+    # documents = sum(
+    #     map(lambda d: d.page_content, loader.alazy_load()),
+    #     [],
+    # )
 
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-        ("###", "Header 3"),
-        ("####", "Header 4"),
-    ]
-    text_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
-
-    # probably: loader.alazy_load()
+    # print(f"Embedding {len(documents)} chunks ...")
     #
-    documents = sum(
-        map(
-            text_splitter.split_text,
-            map(lambda d: d.page_content, loader.lazy_load()),
-        ),
-        [],
-    )
-
-    print(f"Embedding {len(documents)} chunks ...")
-
     # Qdrant
     # Can this even be async?
     print("Initializing qdrant client ...")
@@ -109,7 +101,13 @@ async def run(loader: BaseLoader, collection_name: str):
     )
 
     print("Async adding documents to vector store ...")
-    await vector_store.aadd_documents(documents)
+    batch_size = 256
+    # Batch over lazy loader
+    batch_count = 1
+    for batch in batch_iterate(iterable=loader.lazy_load(), size=batch_size):
+        print(f"Processing batch {batch_count} ...")
+        await vector_store.aadd_documents(batch)
+        batch_count += 1
 
     print("Getting qdrant collection statistics ...")
     collection = client.get_collection(collection_name)
