@@ -24,6 +24,17 @@ run-benchmark NAME REPO FILE COLUMN RUNS="1" WARMUP="0": release-build-swiftide
   --export-markdown results/{{NAME}}.md \
   --export-json results/{{NAME}}.json
 
+run-benchmark-swiftide-old-new NAME REPO FILE COLUMN RUNS="3" WARMUP="1": release-build-swiftide release-build-swiftide-other
+  #!/usr/bin/env bash
+  set -exuo pipefail
+  echo "Benchmarking NAME - {{REPO}} with {{FILE}}"
+  path=`just download-dataset {{REPO}} {{FILE}}`
+  hyperfine  -r {{RUNS}} -w {{WARMUP}}  \
+  -n swiftide-after "cd swiftide-bench && cargo run --release -- --collection-name swiftide-{{NAME}} parquet $path {{COLUMN}}" \
+  -n swiftide-before "cd swiftide-bench-other && cargo run --release -- --collection-name swiftide-other-{{NAME}} parquet $path {{COLUMN}}" \
+  --export-markdown results/swiftide-old-new-{{NAME}}.md \
+  --export-json results/swiftide-old-new-{{NAME}}.json
+
 [group("data")]
 download-rust-book:
   mkdir -p data/rust-book && \
@@ -42,6 +53,9 @@ benchmark-wikitext:
 benchmark-rotten-tomatoes:
   just run-benchmark rotten-tomatoes {{rotten_tomatoes_repo}} {{rotten_tomatoes_file}} text
 
+benchmark-rotten-tomatoes-before-after:
+  just run-benchmark-swiftide-old-new rotten-tomatoes {{rotten_tomatoes_repo}} {{rotten_tomatoes_file}} text
+
 [group("benchmarks")]
 [doc("Small dataset of 100 rows")]
 benchmark-rust-book: download-rust-book release-build-swiftide
@@ -51,7 +65,20 @@ benchmark-rust-book: download-rust-book release-build-swiftide
   --export-markdown results/rust-book.md \
   --export-json results/rust-book.json
 
+[group("benchmarks")]
+[doc("Small dataset of 100 rows")]
+benchmark-rust-book-before-after: download-rust-book release-build-swiftide release-build-swiftide-other
+  hyperfine -r 1 \
+  -n swiftide-after "cd swiftide-bench && cargo run --release -- --collection-name swiftide-rust-book filename rust-book" \
+  -n swiftide-before "cd swiftide-bench-other && cargo run --release -- --collection-name swiftide-rust-book filename rust-book" \
+  --export-markdown results/swiftide-old-new-rust-book.md \
+  --export-json results/swiftide-old-new-book.json
+
 [group("setup")]
 release-build-swiftide:
   @cd swiftide-bench && cargo build --release
+
+[group("setup")]
+release-build-swiftide-other:
+  @cd swiftide-bench-other && cargo build --release
 

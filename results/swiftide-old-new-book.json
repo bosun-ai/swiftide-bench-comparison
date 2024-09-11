@@ -1,0 +1,36 @@
+{
+  "results": [
+    {
+      "command": "swiftide-after",
+      "mean": 5.48667296646,
+      "stddev": null,
+      "median": 5.48667296646,
+      "user": 52.321747699999996,
+      "system": 1.31886412,
+      "min": 5.48667296646,
+      "max": 5.48667296646,
+      "times": [
+        5.48667296646
+      ],
+      "exit_codes": [
+        0
+      ]
+    },
+    {
+      "command": "swiftide-before",
+      "mean": 5.51454459146,
+      "stddev": null,
+      "median": 5.51454459146,
+      "user": 51.809925699999994,
+      "system": 1.36138812,
+      "min": 5.51454459146,
+      "max": 5.51454459146,
+      "times": [
+        5.51454459146
+      ],
+      "exit_codes": [
+        0
+      ]
+    }
+  ]
+}
