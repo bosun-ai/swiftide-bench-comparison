@@ -20,7 +20,9 @@ run-benchmark NAME REPO FILE COLUMN RUNS="1" WARMUP="0": release-build-swiftide
   path=`just download-dataset {{REPO}} {{FILE}}`
   hyperfine  -r {{RUNS}} -w {{WARMUP}}  \
   -n langchain "cd langchain-bench && poetry run cli --dataset {{REPO}} --dataset-file $path --column-name {{COLUMN}} -q lanchain-{{NAME}}" \
-  -n swiftide "cd swiftide-bench && cargo run --release -- --collection-name swiftide-{{NAME}} parquet $path {{COLUMN}}"
+  -n swiftide "cd swiftide-bench && cargo run --release -- --collection-name swiftide-{{NAME}} parquet $path {{COLUMN}}" \
+  --export-markdown results/{{NAME}}.md \
+  --export-json results/{{NAME}}.json
 
 [group("data")]
 download-rust-book:
@@ -45,7 +47,9 @@ benchmark-rotten-tomatoes:
 benchmark-rust-book: download-rust-book release-build-swiftide
   hyperfine -r 1 \
   -n langchain "cd langchain-bench && poetry run cli --dir rust-book -q lanchain-rust-book" \
-  -n swiftide "cd swiftide-bench && cargo run --release -- --collection-name swiftide-rust-book filename rust-book"
+  -n swiftide "cd swiftide-bench && cargo run --release -- --collection-name swiftide-rust-book filename rust-book" \
+  --export-markdown results/rust-book.md \
+  --export-json results/rust-book.json
 
 [group("setup")]
 release-build-swiftide:
