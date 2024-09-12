@@ -9,6 +9,7 @@ swiftide = { version = "0.11.1", features = [
   "qdrant",
   "fastembed",
   "parquet",
+  "openai",
 ], path = "../../swiftide/swiftide" }
 tokio = { version = "1.40.0", features = ["full"] }
 tracing = "0.1.40"

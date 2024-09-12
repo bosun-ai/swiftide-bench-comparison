@@ -27,11 +27,12 @@ run-benchmark NAME REPO FILE COLUMN RUNS="1" WARMUP="0": release-build-swiftide
 run-benchmark-swiftide-old-new NAME REPO FILE COLUMN RUNS="3" WARMUP="1": release-build-swiftide release-build-swiftide-other
   #!/usr/bin/env bash
   set -exuo pipefail
+  export RUST_LOG=swiftide=debug
   echo "Benchmarking NAME - {{REPO}} with {{FILE}}"
   path=`just download-dataset {{REPO}} {{FILE}}`
-  hyperfine  -r {{RUNS}} -w {{WARMUP}}  \
-  -n swiftide-after "cd swiftide-bench && cargo run --release -- --collection-name swiftide-{{NAME}} parquet $path {{COLUMN}}" \
-  -n swiftide-before "cd swiftide-bench-other && cargo run --release -- --collection-name swiftide-other-{{NAME}} parquet $path {{COLUMN}}" \
+  hyperfine  -r {{RUNS}} -w {{WARMUP}} -L embeddingmodel fast-embed,open-ai  \
+  "cd swiftide-bench && cargo run --release -- --collection-name swiftide-{{NAME}} -e {embeddingmodel} parquet $path {{COLUMN}}" \
+  "cd swiftide-bench-other && cargo run --release -- --collection-name swiftide-other-{{NAME}} -e {embeddingmodel} parquet $path {{COLUMN}}" \
   --export-markdown results/swiftide-old-new-{{NAME}}.md \
   --export-json results/swiftide-old-new-{{NAME}}.json
 
@@ -68,9 +69,9 @@ benchmark-rust-book: download-rust-book release-build-swiftide
 [group("benchmarks")]
 [doc("Small dataset of 100 rows")]
 benchmark-rust-book-before-after: download-rust-book release-build-swiftide release-build-swiftide-other
-  hyperfine -r 1 \
-  -n swiftide-after "cd swiftide-bench && cargo run --release -- --collection-name swiftide-rust-book filename rust-book" \
-  -n swiftide-before "cd swiftide-bench-other && cargo run --release -- --collection-name swiftide-rust-book filename rust-book" \
+  hyperfine -r 1 -L embeddingmodel fast-embed,open-ai --show-output \
+  "cd swiftide-bench && cargo run --release -- --chunk-markdown -e {embeddingmodel} --collection-name swiftide-rust-book filename rust-book" \
+  "cd swiftide-bench-other && cargo run --release -- --chunk-markdown -e {embeddingmodel} --collection-name swiftide-rust-book filename rust-book" \
   --export-markdown results/swiftide-old-new-rust-book.md \
   --export-json results/swiftide-old-new-book.json
 

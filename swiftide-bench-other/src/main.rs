@@ -7,8 +7,13 @@ use swiftide::{
         transformers::{ChunkMarkdown, Embed},
         EmbeddedField, Pipeline,
     },
-    integrations::{fastembed::FastEmbed, parquet::Parquet, qdrant::Qdrant},
-    traits::Loader,
+    integrations::{
+        fastembed::{EmbeddingModelType, FastEmbed},
+        openai::OpenAI,
+        parquet::Parquet,
+        qdrant::Qdrant,
+    },
+    traits::{EmbeddingModel, Loader},
 };
 
 #[derive(Parser)]
@@ -16,6 +21,12 @@ use swiftide::{
 struct Args {
     #[arg(short, long)]
     collection_name: String,
+
+    #[arg(value_enum, short, long, default_value = "fast-embed")]
+    embedding_model: EmbeddingModelArgs,
+
+    #[arg(long, default_value = "false")]
+    chunk_markdown: bool,
 
     #[command(subcommand)]
     loader: LoaderArgs,
@@ -29,36 +40,46 @@ enum LoaderArgs {
     Parquet { path: PathBuf, column: String },
 }
 
+#[derive(ValueEnum, Clone, Default)]
+enum EmbeddingModelArgs {
+    #[default]
+    FastEmbed,
+    OpenAI,
+}
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
 
     let batch_size = 256;
+    let vector_size = match args.embedding_model {
+        EmbeddingModelArgs::FastEmbed => 384,
+        EmbeddingModelArgs::OpenAI => 1536,
+    };
+
     let qdrant = Qdrant::builder()
         .collection_name(&args.collection_name)
-        .vector_size(384)
+        .vector_size(vector_size)
         .with_vector(EmbeddedField::Combined)
         .batch_size(24)
         .build()
         .unwrap();
 
     let client = qdrant.client();
-    let _ = client.delete_collection(args.collection_name);
+    let _ = client.delete_collection(args.collection_name).await;
 
     let loader = build_loader(&args.loader);
+    let embedding_model = build_embedding_model(&args.embedding_model, batch_size);
 
-    Pipeline::from_loader(loader)
-        // .then_chunk(ChunkMarkdown::from_chunk_range(10..2024))
-        .then_in_batch(
-            batch_size,
-            Embed::new(
-                FastEmbed::try_default()
-                    .unwrap()
-                    .with_batch_size(batch_size)
-                    .to_owned(),
-            ),
-        )
+    let mut pipeline = Pipeline::from_loader(loader);
+
+    if args.chunk_markdown {
+        pipeline = pipeline.then_chunk(ChunkMarkdown::from_chunk_range(100..4096));
+    }
+
+    pipeline
+        .then_in_batch(batch_size, Embed::new(embedding_model))
+        .log_all()
         .then_store_with(qdrant)
         .run()
         .await
@@ -74,6 +95,20 @@ fn build_loader(args: &LoaderArgs) -> Box<dyn Loader> {
             Parquet::builder()
                 .path(path)
                 .column_name(column)
+                .build()
+                .unwrap(),
+        ),
+    }
+}
+
+fn build_embedding_model(args: &EmbeddingModelArgs, batch_size: usize) -> Box<dyn EmbeddingModel> {
+    match args {
+        EmbeddingModelArgs::FastEmbed => {
+            Box::new(FastEmbed::builder().batch_size(batch_size).build().unwrap())
+        }
+        EmbeddingModelArgs::OpenAI => Box::new(
+            OpenAI::builder()
+                .default_embed_model("text-embedding-3-small")
                 .build()
                 .unwrap(),
         ),

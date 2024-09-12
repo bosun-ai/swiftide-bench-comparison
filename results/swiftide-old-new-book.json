@@ -1,36 +1,80 @@
 {
   "results": [
     {
-      "command": "swiftide-after",
-      "mean": 5.48667296646,
+      "command": "cd swiftide-bench && cargo run --release -- --chunk-markdown -e fast-embed --collection-name swiftide-rust-book filename rust-book",
+      "mean": 107.88432015138,
       "stddev": null,
-      "median": 5.48667296646,
-      "user": 52.321747699999996,
-      "system": 1.31886412,
-      "min": 5.48667296646,
-      "max": 5.48667296646,
+      "median": 107.88432015138,
+      "user": 423.94154942,
+      "system": 377.16696772,
+      "min": 107.88432015138,
+      "max": 107.88432015138,
       "times": [
-        5.48667296646
+        107.88432015138
       ],
       "exit_codes": [
         0
-      ]
+      ],
+      "parameters": {
+        "embeddingmodel": "fast-embed"
+      }
     },
     {
-      "command": "swiftide-before",
-      "mean": 5.51454459146,
+      "command": "cd swiftide-bench-other && cargo run --release -- --chunk-markdown -e fast-embed --collection-name swiftide-rust-book filename rust-book",
+      "mean": 43.103482359379996,
       "stddev": null,
-      "median": 5.51454459146,
-      "user": 51.809925699999994,
-      "system": 1.36138812,
-      "min": 5.51454459146,
-      "max": 5.51454459146,
+      "median": 43.103482359379996,
+      "user": 468.46120342,
+      "system": 6.089416719999999,
+      "min": 43.103482359379996,
+      "max": 43.103482359379996,
       "times": [
-        5.51454459146
+        43.103482359379996
       ],
       "exit_codes": [
         0
-      ]
+      ],
+      "parameters": {
+        "embeddingmodel": "fast-embed"
+      }
+    },
+    {
+      "command": "cd swiftide-bench && cargo run --release -- --chunk-markdown -e open-ai --collection-name swiftide-rust-book filename rust-book",
+      "mean": 4.20202656838,
+      "stddev": null,
+      "median": 4.20202656838,
+      "user": 0.41128341999999996,
+      "system": 0.27361972,
+      "min": 4.20202656838,
+      "max": 4.20202656838,
+      "times": [
+        4.20202656838
+      ],
+      "exit_codes": [
+        0
+      ],
+      "parameters": {
+        "embeddingmodel": "open-ai"
+      }
+    },
+    {
+      "command": "cd swiftide-bench-other && cargo run --release -- --chunk-markdown -e open-ai --collection-name swiftide-rust-book filename rust-book",
+      "mean": 6.35161940138,
+      "stddev": null,
+      "median": 6.35161940138,
+      "user": 0.43906241999999995,
+      "system": 0.39034272,
+      "min": 6.35161940138,
+      "max": 6.35161940138,
+      "times": [
+        6.35161940138
+      ],
+      "exit_codes": [
+        0
+      ],
+      "parameters": {
+        "embeddingmodel": "open-ai"
+      }
     }
   ]
 }
