@@ -80,6 +80,9 @@ release-build-swiftide:
   @cd swiftide-bench && cargo build --release
 
 [group("setup")]
+setup-langchain:
+  @cd langchain-bench && poetry install
+
+[group("setup")]
 release-build-swiftide-other:
   @cd swiftide-bench-other && cargo build --release
-

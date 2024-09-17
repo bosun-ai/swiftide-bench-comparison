@@ -5,11 +5,11 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.17", features = ["derive"] }
-swiftide = { version = "0.11.1", features = [
-  "qdrant",
-  "fastembed",
-  "parquet",
-  "openai",
+swiftide = { version = "0.12.1", features = [
+    "qdrant",
+    "fastembed",
+    "parquet",
+    "openai",
 ], path = "../../swiftide/swiftide" }
 tokio = { version = "1.40.0", features = ["full"] }
 tracing = "0.1.40"
