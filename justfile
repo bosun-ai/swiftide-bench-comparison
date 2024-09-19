@@ -60,7 +60,7 @@ benchmark-rotten-tomatoes-before-after:
 [group("benchmarks")]
 [doc("Small dataset of 100 rows")]
 benchmark-rust-book: download-rust-book release-build-swiftide
-  hyperfine -r 1 \
+  hyperfine --warmup 1 -r 3 \
   -n langchain "cd langchain-bench && poetry run cli --dir rust-book -q lanchain-rust-book" \
   -n swiftide "cd swiftide-bench && cargo run --release -- --collection-name swiftide-rust-book filename rust-book" \
   --export-markdown results/rust-book.md \

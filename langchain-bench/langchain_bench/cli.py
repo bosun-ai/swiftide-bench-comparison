@@ -16,7 +16,6 @@ from langchain_community.document_loaders import TextLoader
 from multiprocessing import cpu_count
 
 from argparse import ArgumentParser
-import uvloop
 
 parser = ArgumentParser(
     prog="Langchain Benchmark",
@@ -39,7 +38,7 @@ def main():
     args = parser.parse_args()
     print("Starting benchmark...")
     loader = get_loader(args.dataset, args.dataset_file, args.column_name, args.dir)
-    uvloop.run(run(loader, args.qdrant_collection_name))
+    run(loader, args.qdrant_collection_name)
 
 
 def get_loader(dataset: str, dataset_file: str, column_name: str, dir: str):
@@ -60,7 +59,7 @@ def get_loader(dataset: str, dataset_file: str, column_name: str, dir: str):
         raise Exception("Could not build loader from args")
 
 
-async def run(loader: BaseLoader, collection_name: str):
+def run(loader: BaseLoader, collection_name: str):
     # FastEmbedEmbeddings
     # usage: embeddings.embed_documents(list[])
     # Wtf is with the args?
@@ -87,7 +86,7 @@ async def run(loader: BaseLoader, collection_name: str):
     aclient = AsyncQdrantClient()
 
     print("Creating qdrant collection ...")
-    await aclient.recreate_collection(
+    client.recreate_collection(
         collection_name=collection_name,
         vectors_config=VectorParams(size=384, distance=Distance.COSINE),
     )
@@ -101,12 +100,12 @@ async def run(loader: BaseLoader, collection_name: str):
     )
 
     print("Async adding documents to vector store ...")
-    batch_size = 256
+    batch_size = 4
     # Batch over lazy loader
     batch_count = 1
     for batch in batch_iterate(iterable=loader.lazy_load(), size=batch_size):
         print(f"Processing batch {batch_count} ...")
-        await vector_store.aadd_documents(batch)
+        vector_store.add_documents(batch)
         batch_count += 1
 
     print("Getting qdrant collection statistics ...")
