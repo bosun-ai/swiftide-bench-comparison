@@ -1,7 +1,7 @@
 from typing import Required
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-from langchain_core.utils.iter import batch_iterate
+from langchain_core.utils.aiter import abatch_iterate
 from langchain_qdrant import Qdrant
 from qdrant_client import AsyncQdrantClient, QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
@@ -16,6 +16,9 @@ from langchain_community.document_loaders import TextLoader
 from multiprocessing import cpu_count
 
 from argparse import ArgumentParser
+
+import uvloop
+import asyncio
 
 parser = ArgumentParser(
     prog="Langchain Benchmark",
@@ -38,7 +41,7 @@ def main():
     args = parser.parse_args()
     print("Starting benchmark...")
     loader = get_loader(args.dataset, args.dataset_file, args.column_name, args.dir)
-    run(loader, args.qdrant_collection_name)
+    uvloop.run(run(loader, args.qdrant_collection_name))
 
 
 def get_loader(dataset: str, dataset_file: str, column_name: str, dir: str):
@@ -54,39 +57,35 @@ def get_loader(dataset: str, dataset_file: str, column_name: str, dir: str):
             glob="**/*.md",
             show_progress=True,
             loader_cls=UnstructuredMarkdownLoader,
+            # use_multithreading=True,
+            # max_concurrency=2,
         )
     else:
         raise Exception("Could not build loader from args")
 
 
-def run(loader: BaseLoader, collection_name: str):
-    # FastEmbedEmbeddings
-    # usage: embeddings.embed_documents(list[])
-    # Wtf is with the args?
-    #
-    # For performance, can tune `parallel` and `threads`
+async def run(loader: BaseLoader, collection_name: str):
     print("Setting up embeddings ...")
     embeddings = FastEmbedEmbeddings(
-        cache_dir=None, threads=None, model_name="BAAI/bge-small-en-v1.5", _model=None
+        cache_dir=None,
+        threads=None,
+        model_name="BAAI/bge-small-en-v1.5",
+        _model=None,
+        max_length= 512,
+        doc_embed_type= "default",
+        batch_size= 256,
+        parallel=None,
     )
 
     # Dataset loader
     print("Setting up loader ...")
-    # documents = sum(
-    #     map(lambda d: d.page_content, loader.alazy_load()),
-    #     [],
-    # )
 
-    # print(f"Embedding {len(documents)} chunks ...")
-    #
-    # Qdrant
-    # Can this even be async?
     print("Initializing qdrant client ...")
     client = QdrantClient()
     aclient = AsyncQdrantClient()
 
     print("Creating qdrant collection ...")
-    client.recreate_collection(
+    await aclient.recreate_collection(
         collection_name=collection_name,
         vectors_config=VectorParams(size=384, distance=Distance.COSINE),
     )
@@ -101,14 +100,19 @@ def run(loader: BaseLoader, collection_name: str):
 
     print("Async adding documents to vector store ...")
     batch_size = 4
-    # Batch over lazy loader
+
+    futures = []
     batch_count = 1
-    for batch in batch_iterate(iterable=loader.lazy_load(), size=batch_size):
-        print(f"Processing batch {batch_count} ...")
-        vector_store.add_documents(batch)
+    async for batch in abatch_iterate(iterable=loader.alazy_load(), size=batch_size):
+        futures.append(vector_store.aadd_documents(batch))
         batch_count += 1
+
+    await asyncio.gather(*futures)
 
     print("Getting qdrant collection statistics ...")
     collection = client.get_collection(collection_name)
 
     print(f"Added vectors: {collection.vectors_count}")
+
+if __name__ == "__main__":
+        main()
