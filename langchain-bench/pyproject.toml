@@ -16,6 +16,7 @@ unstructured = { extras = ["markdown"], version = "^0.15.9" }
 markdown = "^3.7"
 datasets = "3.0.0"
 uvloop = "^0.20"
+pyflame = "^0.3.2"
 
 [tool.poetry.scripts]
 cli = "langchain_bench.cli:main"

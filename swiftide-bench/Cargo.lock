@@ -3265,7 +3265,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "swiftide"
-version = "0.12.1"
+version = "0.12.2"
 dependencies = [
  "swiftide-core",
  "swiftide-indexing",
@@ -3286,7 +3286,7 @@ dependencies = [
 
 [[package]]
 name = "swiftide-core"
-version = "0.12.1"
+version = "0.12.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3309,7 +3309,7 @@ dependencies = [
 
 [[package]]
 name = "swiftide-indexing"
-version = "0.12.1"
+version = "0.12.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3333,7 +3333,7 @@ dependencies = [
 
 [[package]]
 name = "swiftide-integrations"
-version = "0.12.1"
+version = "0.12.2"
 dependencies = [
  "anyhow",
  "arrow",
@@ -3361,7 +3361,7 @@ dependencies = [
 
 [[package]]
 name = "swiftide-macros"
-version = "0.12.1"
+version = "0.12.2"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -3371,7 +3371,7 @@ dependencies = [
 
 [[package]]
 name = "swiftide-query"
-version = "0.12.1"
+version = "0.12.2"
 dependencies = [
  "anyhow",
  "async-trait",

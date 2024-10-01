@@ -3,6 +3,12 @@ name = "swiftide-bench"
 version = "0.1.0"
 edition = "2021"
 
+[profile.bench]
+debug = true
+
+[profile.release]
+debug = true
+
 [dependencies]
 clap = { version = "4.5.17", features = ["derive"] }
 swiftide = { version = "0.12.1", features = [

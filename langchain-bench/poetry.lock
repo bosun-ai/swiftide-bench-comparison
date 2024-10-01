@@ -2352,6 +2352,21 @@ files = [
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
+name = "pyflame"
+version = "0.3.2"
+description = "A Flamegraph generator for Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pyflame-0.3.2-py3-none-any.whl", hash = "sha256:b67abf9a9f9c0051b5468a3ff5f0e26376609f447c99cb0674e3eba8d5ce0d22"},
+    {file = "pyflame-0.3.2.tar.gz", hash = "sha256:8f5e5146781bddef387b33170b27cfc5be907fae0179516db564a723f30e5121"},
+]
+
+[package.extras]
+django = ["django (>=3.2)", "django-debug-toolbar"]
+jupyter = ["ipython", "traitlets (>=5)"]
+
+[[package]]
 name = "pypdf"
 version = "4.3.1"
 description = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
@@ -3726,4 +3741,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12,<3.13"
-content-hash = "652a86b1de096530d9b3913526fae62d457c7500ed3aff7bdd6a9a6853ad2bb7"
+content-hash = "ecff95ac0314a9acbb198898b7c8213be9f7a124d856bfd0dc1cd9a21a8232ce"
